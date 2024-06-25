@@ -17,4 +17,4 @@ Welcome to the Adventure RPG Game! This game is a text-based role-playing game (
 
 1. **Setup**: Ensure you have Python installed on your system.
 2. **Clone the Repository**: 
-   git clone (https://github.com/omar-samer-creations/Complex-RPG-Chrono-Nexus)
+   git clone (https://github.com/omar-samer-creations/Complex-RPG-Chrono-Nexus/blob/main/Game%20Code)
