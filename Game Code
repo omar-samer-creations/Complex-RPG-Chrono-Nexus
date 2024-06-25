@@ -1,0 +1,298 @@
+Python Code:
+
+import random
+import time
+
+class Quest:
+    def __init__(self, name, description, target_enemy, target_quantity):
+        self.name = name
+        self.description = description
+        self.target_enemy = target_enemy
+        self.target_quantity = target_quantity
+        self.progress = 0
+        self.completed = False
+
+    def update_progress(self, enemy_name):
+        if not self.completed:
+            if enemy_name == self.target_enemy:
+                self.progress += 1
+                print(f"Quest Updated: {self.progress}/{self.target_quantity} {self.target_enemy} defeated.")
+                if self.progress >= self.target_quantity:
+                    self.completed = True
+                    print(f"Quest Completed: {self.name}")
+
+class Player:
+    def __init__(self, name, max_health, attack, defense, max_stamina, exp, level):
+        self.name = name
+        self.max_health = max_health
+        self.health = max_health
+        self.attack = attack
+        self.defense = defense
+        self.max_stamina = max_stamina
+        self.stamina = max_stamina
+        self.exp = exp
+        self.level = level
+        self.inventory = {"Health Potion": 3, "Apple": 5, "Water": 3}
+        self.quests = []
+
+    def attack_enemy(self, enemy):
+        if self.stamina > 0:
+            damage = random.randint(1, self.attack)
+            adjusted_damage = max(0, damage - enemy.defense)
+            enemy.take_damage(adjusted_damage, self)  
+            print(f"{self.name} attacks {enemy.name} (Level {enemy.level}) for {adjusted_damage} damage.")
+            self.stamina -= 10
+        else:
+            print("Not enough stamina to attack. Rest or consume items to recover stamina.")
+
+    def take_damage(self, damage):
+        adjusted_damage = max(0, damage - self.defense)
+        self.health -= adjusted_damage
+        print(f"{self.name} takes {adjusted_damage} damage.")
+
+    def rest(self):
+        rest_amount = min(20, self.max_health - self.health)
+        self.health += rest_amount
+        self.stamina = self.max_stamina
+        print(f"{self.name} rests and recovers {rest_amount} health and full stamina.")
+
+    def use_item(self, item):
+        if item in self.inventory and self.inventory[item] > 0:
+            if item == "Health Potion":
+                healing_amount = min(30, self.max_health - self.health)
+                self.health += healing_amount
+                print(f"{self.name} uses a Health Potion and recovers {healing_amount} health.")
+            elif item == "Apple":
+                self.health += 10
+                print(f"{self.name} eats an Apple and recovers 10 health.")
+            elif item == "Water":
+                self.stamina = self.max_stamina
+                print(f"{self.name} drinks Water and recovers full stamina.")
+            self.inventory[item] -= 1
+        else:
+            print(f"{self.name} doesn't have {item} in the inventory.")
+
+    def update_status(self):
+        self.exp += 5
+        if self.exp >= 20:
+            self.level_up()
+
+    def level_up(self):
+        self.level += 1
+        self.exp = 0
+        self.max_health += 20
+        self.attack += 5
+        self.defense += 2
+        print(f"{self.name} leveled up to {self.level}! Max health, attack, and defense increased.")
+
+    def find_item(self):
+        item_chance = random.randint(1, 10)
+        if item_chance <= 2:
+            random_item = random.choice(["Health Potion", "Apple", "Water"])
+            item_quantity = random.randint(1, 3)
+            if random_item in self.inventory:
+                self.inventory[random_item] += item_quantity
+            else:
+                self.inventory[random_item] = item_quantity
+            print(f"{self.name} found {item_quantity} {random_item}!")
+
+    def check_status(self):
+        if self.stamina < 0:
+            self.stamina = 0
+        print(f"{self.name} (Level {self.level}) - Health: {self.health}/{self.max_health}, "
+              f"Stamina: {self.stamina}/{self.max_stamina}, EXP: {self.exp}/{20 * self.level}")
+
+    def check_quest_completion(self, enemy_name):
+        for quest in self.quests:
+            quest.update_progress(enemy_name)
+
+class Enemy:
+    def __init__(self, name, max_health, attack, defense, exp_reward, loot_table, level):
+        self.name = name
+        self.max_health = max_health
+        self.health = max_health
+        self.attack = attack
+        self.defense = defense
+        self.exp_reward = exp_reward
+        self.loot_table = loot_table
+        self.level = level
+
+    def take_damage(self, damage, player):
+        adjusted_damage = max(0, damage - player.defense)
+        self.health -= adjusted_damage
+        print(f"{self.name} (Level {self.level}) takes {adjusted_damage} damage from {player.name}.")
+
+    def attack_player(self, player):
+        damage = random.randint(1, self.attack)
+        adjusted_damage = max(0, damage - player.defense)
+        player.take_damage(adjusted_damage)
+        print(f"{self.name} (Level {self.level}) attacks {player.name} for {adjusted_damage} damage.")
+
+    def drop_loot(self, player):
+        loot_item = random.choice(self.loot_table)
+        print(f"{self.name} (Level {self.level}) dropped {loot_item}!")
+        if loot_item in player.inventory:
+            player.inventory[loot_item] += 1
+        else:
+            player.inventory[loot_item] = 1
+
+    def display_health(self):
+        print(f"{self.name} (Level {self.level}) has {self.health}/{self.max_health} health remaining.")
+
+def generate_random_enemy(player_level):
+    enemy_names = ["Goblin", "Orc", "Troll", "Skeleton", "Witch", "Rabbit", "Deer", "Squirrel"]
+    
+    min_enemy_level = max(1, player_level - 5)
+    max_enemy_level = player_level + 5
+    
+    enemy_level = random.randint(min_enemy_level, max_enemy_level)
+    
+    enemy_name = random.choice(enemy_names)
+    
+    enemy_health = random.randint(20 + 5 * enemy_level, 50 + 5 * enemy_level)
+    enemy_attack = random.randint(5 + 2 * enemy_level, 15 + 2 * enemy_level)
+    enemy_defense = random.randint(1, 5 + enemy_level)
+    
+    exp_reward = random.randint(5, 20)
+    loot_table = ["Health Potion", "Mana Potion", "Apple", "Water"]
+    
+    return Enemy(enemy_name, enemy_health, enemy_attack, enemy_defense, exp_reward, loot_table, enemy_level)
+
+def generate_boss(player_level):
+    if player_level >= 20:
+        boss_health = 500
+        boss_attack = 50
+        boss_defense = 20
+        exp_reward = 100
+        loot_table = ["Super Health Potion", "Ultra Apple", "Legendary Sword"]
+        return Enemy("Ancient Dragon", boss_health, boss_attack, boss_defense, exp_reward, loot_table, level=30)
+    else:
+        return None
+
+def print_inventory(player):
+    print("\nInventory:")
+    for item, quantity in player.inventory.items():
+        print(f"{item}: {quantity}")
+
+def main():
+    player_name = input("Enter your character's name: ")
+    player = Player(player_name, 100, 20, 10, 100, 0, 1)
+
+    print("A wild Goblin (Level 1) appears!")
+
+    defeat_goblin_quest = Quest("Defeat Goblins", "Defeat 3 Goblins", "Goblin", 3)
+    player.quests.append(defeat_goblin_quest)
+
+    while player.health > 0:
+        enemy = generate_random_enemy(player.level)
+        
+        print(f"A wild {enemy.name} (Level {enemy.level}) appears!")
+
+        no_attack_rounds = 0  
+
+        while player.health > 0 and enemy.health > 0:
+            player.update_status()
+            player.find_item()
+            player.check_quest_completion(enemy.name)
+            print("\nTime passes...")
+            time.sleep(2) 
+
+            player.check_status()
+
+            if player.health <= 0:
+                print("Game over. You have succumbed to hunger or thirst.")
+                break
+
+            enemy.display_health()
+            print_inventory(player)
+
+            action = input("\nEnter 'a' to attack, 'u' to use item, 'r' to rest, 'f' to flee, 'q' to quit: ")
+
+            if action == 'a':
+                player.attack_enemy(enemy)
+                if enemy.health > 0:
+                    enemy.attack_player(player)
+            elif action == 'u':
+                item_to_use = input("Enter the item to use: ")
+                player.use_item(item_to_use)
+            elif action == 'r':
+                player.rest()
+            elif action == 'f':
+                print("You attempt to flee.")
+                flee_success = random.choice([True, False]) 
+                if flee_success:
+                    print("You successfully fled from the battle.")
+                    no_attack_rounds = 2 
+                else:
+                    print("You couldn't escape! The enemy attacks.")
+                    enemy.attack_player(player)
+            elif action == 'q':
+                print("You quit the game.")
+                return
+            else:
+                print("Invalid action. Try again.")
+
+            if no_attack_rounds == 0:
+                enemy.attack_player(player)
+            else:
+                no_attack_rounds -= 1  
+
+        if player.health > 0 and enemy.health <= 0:
+            print(f"\nYou defeated the {enemy.name} (Level {enemy.level})!")
+            enemy.drop_loot(player)
+
+        if player.level >= 20:
+            boss = generate_boss(player.level)
+            if boss:
+                print(f"A powerful boss, {boss.name} (Level {boss.level}), appears!")
+
+                while player.health > 0 and boss.health > 0:
+                    player.update_status()
+                    player.find_item()
+                    player.check_quest_completion(boss.name)
+                    print("\nTime passes...")
+                    time.sleep(2)  
+
+                    player.check_status()
+
+                    if player.health <= 0:
+                        print("Game over. You have succumbed to hunger or thirst.")
+                        break
+
+                    boss.display_health()
+                    print_inventory(player)
+
+                    action = input("\nEnter 'a' to attack, 'u' to use item, 'r' to rest, 'f' to flee, 'q' to quit: ")
+
+                    if action == 'a':
+                        player.attack_enemy(boss)
+                        if boss.health > 0:
+                            boss.attack_player(player)
+                    elif action == 'u':
+                        item_to_use = input("Enter the item to use: ")
+                        player.use_item(item_to_use)
+                    elif action == 'r':
+                        player.rest()
+                    elif action == 'f':
+                        print("You attempt to flee.")
+                        flee_success = random.choice([True, False])  
+                        if flee_success:
+                            print("You successfully fled from the battle.")
+                            no_attack_rounds = 2  
+                        else:
+                            print("You couldn't escape! The boss attacks.")
+                            boss.attack_player(player)
+                    elif action == 'q':
+                        print("You quit the game.")
+                        return
+                    else:
+                        print("Invalid action. Try again.")
+
+                    boss.attack_player(player)
+
+                if player.health > 0 and boss.health <= 0:
+                    print(f"\nCongratulations! You defeated the mighty {boss.name} (Level {boss.level})!")
+                    boss.drop_loot(player)
+
+if __name__ == "__main__":
+    main()
